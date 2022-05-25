@@ -25,6 +25,8 @@ import io.micronaut.core.convert.ConversionService;
 import io.micronaut.core.io.Writable;
 import io.micronaut.core.io.buffer.ByteBuffer;
 import io.micronaut.core.io.buffer.ReferenceCounted;
+import io.micronaut.core.propagation.PropagatedContext;
+import io.micronaut.core.propagation.PropagatedContext;
 import io.micronaut.core.type.Argument;
 import io.micronaut.http.HttpAttributes;
 import io.micronaut.http.HttpHeaders;
@@ -36,6 +38,8 @@ import io.micronaut.http.MutableHttpHeaders;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.codec.MediaTypeCodec;
 import io.micronaut.http.codec.MediaTypeCodecRegistry;
+import io.micronaut.http.context.ServerHttpRequestContext;
+import io.micronaut.http.context.ServerHttpRequestContext;
 import io.micronaut.http.context.ServerRequestContext;
 import io.micronaut.http.context.event.HttpRequestTerminatedEvent;
 import io.micronaut.http.exceptions.HttpStatusException;
@@ -215,7 +219,14 @@ public final class RoutingInBoundHandler implements RequestHandler {
             }
             return;
         }
-        new NettyRequestLifecycle(this, outboundAccess, mnRequest).handleNormal();
+        try (PropagatedContext.InContext ignore = PropagatedContext.newContext(new ServerHttpRequestContext(nettyHttpRequest)).propagate()) {
+            new NettyRequestLifecycle(this, outboundAccess, mnRequest).handleNormal();
+        }
+    }
+
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, io.micronaut.http.HttpRequest<?> httpRequest) {
+        new NettyRequestLifecycle(this, ctx, (NettyHttpRequest<?>) httpRequest).handleNormal();
     }
 
     public void writeResponse(PipeliningServerHandler.OutboundAccess outboundAccess,
