@@ -26,7 +26,6 @@ import io.micronaut.core.io.Writable;
 import io.micronaut.core.io.buffer.ByteBuffer;
 import io.micronaut.core.io.buffer.ReferenceCounted;
 import io.micronaut.core.propagation.PropagatedContext;
-import io.micronaut.core.propagation.PropagatedContext;
 import io.micronaut.core.type.Argument;
 import io.micronaut.http.HttpAttributes;
 import io.micronaut.http.HttpHeaders;
@@ -38,7 +37,6 @@ import io.micronaut.http.MutableHttpHeaders;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.codec.MediaTypeCodec;
 import io.micronaut.http.codec.MediaTypeCodecRegistry;
-import io.micronaut.http.context.ServerHttpRequestContext;
 import io.micronaut.http.context.ServerHttpRequestContext;
 import io.micronaut.http.context.ServerRequestContext;
 import io.micronaut.http.context.event.HttpRequestTerminatedEvent;
@@ -211,7 +209,9 @@ public final class RoutingInBoundHandler implements RequestHandler {
                 conversionService,
                 serverConfiguration
             );
-            new NettyRequestLifecycle(this, outboundAccess, errorRequest).handleException(e.getCause() == null ? e : e.getCause());
+            try (PropagatedContext.InContext ignore = PropagatedContext.newContext(new ServerHttpRequestContext(errorRequest)).propagate()) {
+                new NettyRequestLifecycle(this, outboundAccess, errorRequest).handleException(e.getCause() == null ? e : e.getCause());
+            }
             if (request instanceof StreamedHttpRequest streamed) {
                 streamed.closeIfNoSubscriber();
             } else {
