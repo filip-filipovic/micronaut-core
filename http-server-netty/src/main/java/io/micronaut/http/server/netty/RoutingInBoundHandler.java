@@ -219,14 +219,9 @@ public final class RoutingInBoundHandler implements RequestHandler {
             }
             return;
         }
-        try (PropagatedContext.InContext ignore = PropagatedContext.newContext(new ServerHttpRequestContext(nettyHttpRequest)).propagate()) {
+        try (PropagatedContext.InContext ignore = PropagatedContext.newContext(new ServerHttpRequestContext(mnRequest)).propagate()) {
             new NettyRequestLifecycle(this, outboundAccess, mnRequest).handleNormal();
         }
-    }
-
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, io.micronaut.http.HttpRequest<?> httpRequest) {
-        new NettyRequestLifecycle(this, ctx, (NettyHttpRequest<?>) httpRequest).handleNormal();
     }
 
     public void writeResponse(PipeliningServerHandler.OutboundAccess outboundAccess,
